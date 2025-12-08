@@ -8,27 +8,10 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    overflow: hidden;
+    height: 100%
 }
 
-#game-name {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  
-  font-family: 'DotGothic16', sans-serif;
-  font-size: 64px;
-  letter-spacing: 10px;
-  
-  color: #fdf5e6;
-  text-shadow: 2px 2px 4px #5c4033,
-               0 0 10px rgba(255, 215, 0, 0.6);
-  font-weight: bold;
-  transform: translateX(-50%) scaleY(0.65);
-}
-
-#main-canvas {
-    width: 100vw;
-    height: 100vh;
-    background: url("background.jpg");
+body {
+  background-color: black;
 }
