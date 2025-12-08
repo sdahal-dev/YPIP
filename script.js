@@ -1,7 +1,7 @@
 const canvas = document.getElementById("main-canvas");
 const ctx = canvas.getContext("2d");
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
 const particlesArray = [];
 let isSlicing = false;
 const colors = [
@@ -11,8 +11,8 @@ const colors = [
 ];
 
 window.addEventListener("resize", () => {
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
 })
 
 const mouse = {
