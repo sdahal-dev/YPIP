@@ -3,7 +3,10 @@ const ctx = canvas.getContext("2d");
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
 const particlesArray = [];
+const knifeImg = new Image();
+knifeImg.src = "katana.png";
 let isSlicing = false;
+
 const colors = [
   "hsl(50, 100%, 90%)",  // white-yellow
   "hsl(40, 100%, 60%)",  // gold
@@ -43,11 +46,12 @@ canvas.addEventListener("pointerup", () => {
 
 
 
-function drawCircle(){
-    ctx.fillStyle = "lightblue";
-    ctx.beginPath();
-    ctx.arc(mouse.x, mouse.y, 1, 0, Math.PI*2);
-    ctx.fill();
+function drawKnife(){
+    if(knifeImg.complete){
+        const width = 400;
+        const height = 400;
+        ctx.drawImage(knifeImg, mouse.x, mouse.y, width, height);
+    }
 }
 
 class Particle {
@@ -91,7 +95,7 @@ function animate(){
     ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     handleParticles();
-    drawCircle();
+    if(knifeImg.complete) drawKnife();
     requestAnimationFrame(animate);
 }
 
