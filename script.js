@@ -3,8 +3,6 @@ const ctx = canvas.getContext("2d");
 canvas.width = canvas.clientWidth;
 canvas.height = canvas.clientHeight;
 const particlesArray = [];
-const knifeImg = new Image();
-knifeImg.src = "katana.png";
 let isSlicing = false;
 
 const colors = [
@@ -25,7 +23,7 @@ const mouse = {
 
 canvas.addEventListener("pointerdown", (e) => {
     isSlicing = true;
-    for(let i = 0; i < 15; i++){
+    for(let i = 0; i < 7; i++){
         particlesArray.push(new Particle());
     }
 })
@@ -34,7 +32,7 @@ canvas.addEventListener("pointermove", (e) => {
     mouse.x = e.x;
     mouse.y = e.y;
     if(isSlicing){
-        for(let i = 0; i < 10; i++){
+        for(let i = 0; i < 7; i++){
             particlesArray.push(new Particle());
         }
     }
@@ -44,23 +42,13 @@ canvas.addEventListener("pointerup", () => {
     isSlicing = false;
 })
 
-
-
-function drawKnife(){
-    if(knifeImg.complete){
-        const width = 400;
-        const height = 400;
-        ctx.drawImage(knifeImg, mouse.x, mouse.y, width, height);
-    }
-}
-
 class Particle {
     constructor(){
         this.x = mouse.x;
         this.y = mouse.y;
-        this.size = Math.random() * 3 + 1;
-        this.speedX = Math.random() * 6 - 3;
-        this.speedY = Math.random() * 6 - 3;
+        this.size = Math.random() * 2 + 1;
+        this.speedX = Math.random() * 12 - 6;
+        this.speedY = Math.random() * 12 - 6;
         this.color = colors[Math.floor(Math.random() * colors.length)];
         this.alpha = 1;
     }
@@ -95,7 +83,6 @@ function animate(){
     ctx.fillStyle = "rgba(0,0,0,0.2)";
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     handleParticles();
-    if(knifeImg.complete) drawKnife();
     requestAnimationFrame(animate);
 }
 
