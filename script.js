@@ -1,3 +1,11 @@
+// Music
+const bgMusic = document.getElementById("bg-music");
+
+document.addEventListener("pointerdown", () => {
+  bgMusic.volume = 0.1;
+  bgMusic.play();
+});
+
 const canvas = document.getElementById("main-canvas");
 const ctx = canvas.getContext("2d");
 
@@ -31,97 +39,95 @@ const bomb = { name: "bomb", src: "Images/platoRepublic.jpg" };
 
 // Track slices
 const sliceCount = {};
-fruits.forEach(f => sliceCount[f.name] = 0);
+fruits.forEach(f => (sliceCount[f.name] = 0));
 
-// Track first 10 non-bomb items
+// Track first 10 items
 let initialItems = [];
 const INITIAL_POOL_SIZE = 10;
+let bombsSpawned = 0; 
 
 // -------------------- Mouse --------------------
 const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
 function updateMouse(e) {
   const rect = canvas.getBoundingClientRect();
-  mouse.x = e.clientX - rect.left;
-  mouse.y = e.clientY - rect.top;
+  mouse.x = Math.min(Math.max(e.clientX - rect.left, 0), canvas.width);
+  mouse.y = Math.min(Math.max(e.clientY - rect.top, 0), canvas.height);
 }
 
 canvas.addEventListener("pointerdown", e => {
+  if (gameOver) return;
   updateMouse(e);
   isSlicing = true;
-  for (let i = 0; i < 5; i++) particlesArray.push(new Particle());
 });
 
 canvas.addEventListener("pointermove", e => {
+  if (!isSlicing || gameOver) return;
   updateMouse(e);
-  if (!isSlicing) return;
   trail.push({ x: mouse.x, y: mouse.y });
   if (trail.length > 12) trail.shift();
-  if (particlesArray.length < 300) for (let i = 0; i < 2; i++) particlesArray.push(new Particle());
 });
 
-canvas.addEventListener("pointerup", () => { 
-  isSlicing = false; 
-  trail.length = 0; 
+canvas.addEventListener("pointerup", () => {
+  isSlicing = false;
+  trail.length = 0;
 });
+
+// -------------------- Sounds --------------------
+const sliceSound = new Audio('Sounds/67.mp3');
+const sliceSound2 = new Audio('Sounds/butWhenI.mp3');
+const sliceSound3 = new Audio('Sounds/lowTaper.mp3');
+const sliceSound4 = new Audio('Sounds/gloving.mp3');
+const sliceSound5 = new Audio('Sounds/groupLeader.mp3');
+const explosionSoundSrc = 'Sounds/explosion.mp3';
 
 // -------------------- Trail --------------------
 function drawTrail() {
-  if(trail.length < 2) return;
+  if (trail.length < 2) return;
   ctx.save();
   ctx.strokeStyle = "rgba(255,255,255,0.7)";
   ctx.lineWidth = 3;
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-  ctx.shadowColor = "rgba(255,255,255,0.8)";
-  ctx.shadowBlur = 15;
+  ctx.shadowBlur = 12;
+  ctx.shadowColor = "white";
   ctx.beginPath();
   ctx.moveTo(trail[0].x, trail[0].y);
-  for(let i=1; i<trail.length; i++) ctx.lineTo(trail[i].x, trail[i].y);
+  for (let i = 1; i < trail.length; i++) ctx.lineTo(trail[i].x, trail[i].y);
   ctx.stroke();
   ctx.restore();
 }
 
 // -------------------- Particles --------------------
 class Particle {
-  constructor(x = mouse.x, y = mouse.y, explosive = false) {
-    this.x = x; this.y = y;
-    this.size = explosive ? Math.random()*4+3 : Math.random()*2+1;
-    const angle = Math.random()*Math.PI*2;
-    const speed = explosive ? Math.random()*6+4 : Math.random()*2;
-    this.speedX = Math.cos(angle)*speed;
-    this.speedY = Math.sin(angle)*speed;
-    this.color = explosive ? `hsl(${Math.random()*40},100%,${50+Math.random()*20}%)`
-                           : ["hsl(50,100%,90%)","hsl(40,100%,60%)","hsla(29,100%,50%,1.00)"][Math.floor(Math.random()*3)];
+  constructor(x, y, explosive = false) {
+    this.x = x;
+    this.y = y;
+    this.size = explosive ? Math.random() * 4 + 3 : Math.random() * 2 + 1;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = explosive ? Math.random() * 8 + 4 : Math.random() * 2;
+    this.speedX = Math.cos(angle) * speed;
+    this.speedY = Math.sin(angle) * speed;
     this.alpha = 1;
     this.explosive = explosive;
   }
   update() {
     this.x += this.speedX;
     this.y += this.speedY;
-    if(this.explosive) { this.speedX *= 0.92; this.speedY *= 0.92; this.alpha -= 0.04; }
-    else this.alpha -= 0.03;
+    this.alpha -= this.explosive ? 0.04 : 0.03;
     this.size *= 0.96;
   }
   draw() {
     ctx.save();
     ctx.globalAlpha = this.alpha;
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = "white";
     ctx.beginPath();
-    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 }
 
-function createExplosion(x,y){
-  for(let i=0;i<30;i++){
-    const p = new Particle(x,y,true);
-    const angle = Math.random()*Math.PI*2;
-    const speed = Math.random()*8+4;
-    p.speedX = Math.cos(angle)*speed;
-    p.speedY = Math.sin(angle)*speed;
-    p.color = `hsl(${Math.random()*40},100%,${50+Math.random()*20}%)`;
-    particlesArray.push(p);
+function createExplosion(x, y) {
+  for (let i = 0; i < 30; i++) {
+    particlesArray.push(new Particle(x, y, true));
   }
 }
 
@@ -131,161 +137,198 @@ class Item {
     this.name = name;
     this.img = new Image();
     this.img.src = src;
-    this.size = 150;
+    this.size = 120;
 
-    // Spawn near center of screen
-    this.x = canvas.width/2 + (Math.random()*160-80);
-    this.y = canvas.height/2 + (Math.random()*50-25);
+    this.x = Math.random() * (canvas.width - this.size);
+    this.y = canvas.height + this.size;
 
     this.gravity = 0.18;
-    const minApex = canvas.height*0.15;
-    const maxApex = canvas.height*0.3;
-    const targetApex = minApex + Math.random()*(maxApex-minApex);
-    this.speedY = -Math.sqrt(2*this.gravity*(this.y-targetApex));
-    this.speedX = Math.random()*1.6-0.8;
+    const minApex = canvas.height * 0.15;
+    const maxApex = canvas.height * 0.35;
+    const targetApex = minApex + Math.random() * (maxApex - minApex);
+
+    this.speedY = -Math.sqrt(2 * this.gravity * (this.y - targetApex));
+    this.speedX = Math.random() * 1.6 - 0.8;
     this.dead = false;
   }
+
   update() {
-    this.x += this.speedX; 
-    this.y += this.speedY; 
+    this.x += this.speedX;
+    this.y += this.speedY;
     this.speedY += this.gravity;
-    if(this.y < 20){ this.y = 20; this.speedY = 0; }
-    if(this.y > canvas.height + this.size) this.dead = true;
+
+    // Keep within canvas
+    if (this.x < 0) { this.x = 0; this.speedX *= -1; }
+    if (this.x + this.size > canvas.width) { this.x = canvas.width - this.size; this.speedX *= -1; }
+    if (this.y < 0) this.y = 0;
+    if (this.y > canvas.height + this.size) this.dead = true;
   }
-  draw() { ctx.drawImage(this.img,this.x,this.y,this.size,this.size); }
+
+  draw() {
+    ctx.drawImage(this.img, this.x, this.y, this.size, this.size);
+  }
 }
 
 // -------------------- Spawn --------------------
 function spawnItem() {
-  if(gameOver || items.length >= 8) return;
+  if (gameOver || items.length >= 8) return;
 
   let data;
-  if(initialItems.length < INITIAL_POOL_SIZE) {
-    // First 10 random, each fruit at least twice
-    const pool = [];
-    fruits.forEach(f=>{ pool.push(f); pool.push(f); });
-    initialItems.forEach(f=>{
-      const idx = pool.findIndex(p=>p.name===f.name);
-      if(idx>-1) pool.splice(idx,1);
-    });
-    data = pool[Math.floor(Math.random()*pool.length)];
-    initialItems.push(data);
-  } else {
-    // TikTok-style weighting
-    const totalSlices = Object.values(sliceCount).reduce((a,b)=>a+b,0);
-    if(totalSlices===0) data = fruits[Math.floor(Math.random()*fruits.length)];
-    else {
-      let rand = Math.random()*totalSlices;
-      for(const f of fruits){
-        rand -= sliceCount[f.name];
-        if(rand <= 0){ data = f; break; }
-      }
-      if(!data) data = fruits[Math.floor(Math.random()*fruits.length)];
-    }
+  const randomChance = Math.random();
+
+  // Dynamic bomb chance: start at 15%, increase if less than 2 bombs spawned
+  let bombChance = 0.15;
+  if (bombsSpawned < 2) {
+    bombChance = 0.25; // slightly higher chance to ensure at least 2 appear
   }
 
-  // 15% bomb chance
-  if(Math.random() < 0.15) data = bomb;
+  if (randomChance < bombChance) {
+    data = bomb;
+    bombsSpawned++;
+  } else {
+    data = fruits[Math.floor(Math.random() * fruits.length)];
+  }
+
   items.push(new Item(data.name, data.src));
 }
-setInterval(spawnItem, 1500);
+
+setInterval(spawnItem, 2000);
+
+// -------------------- Life Handling --------------------
+function loseLife() {
+  lives--;
+  if (lives <= 0 && !gameOver) {
+    endGame("You Lost!");
+    return true;
+  }
+  return false;
+}
 
 // -------------------- Collision --------------------
 function checkSlice() {
-  if(!isSlicing || gameOver) return;
-  for(let i=items.length-1;i>=0;i--){
+  if (!isSlicing || gameOver) return;
+
+  for (let i = items.length - 1; i >= 0; i--) {
     let hit = false;
-    for(let t=0;t<trail.length;t++){
-      const dx = trail[t].x - (items[i].x+items[i].size/2);
-      const dy = trail[t].y - (items[i].y+items[i].size/2);
-      if(Math.hypot(dx,dy) < items[i].size/2) { hit = true; break; }
-    }
-    if(hit){
-      if(items[i].name === "bomb"){
-        lives--; 
-        createExplosion(items[i].x+items[i].size/2, items[i].y+items[i].size/2);
-      } else {
-        score++; 
-        sliceCount[items[i].name]++;
-        for(let j=0;j<6;j++) particlesArray.push(new Particle(items[i].x+items[i].size/2, items[i].y+items[i].size/2));
+    for (let t = 0; t < trail.length; t++) {
+      const dx = trail[t].x - (items[i].x + items[i].size / 2);
+      const dy = trail[t].y - (items[i].y + items[i].size / 2);
+      if (Math.hypot(dx, dy) < items[i].size / 2) {
+        hit = true;
+        break;
       }
-      items.splice(i,1);
+    }
+
+    if (hit) {
+      if (items[i].name === "bomb") {
+        const explosionSound = new Audio(explosionSoundSrc);
+        explosionSound.volume = 0.1;
+        explosionSound.playbackRate = 2;
+        explosionSound.play();
+
+        createExplosion(items[i].x + items[i].size / 2, items[i].y + items[i].size / 2);
+        const ended = loseLife();
+        items.splice(i, 1);
+        if (ended) { items.length = 0; trail.length = 0; return; }
+      } else { 
+        score++;
+        sliceCount[items[i].name]++;
+        let sound;
+        switch(items[i].name){
+          case "67": sound=sliceSound; sound.currentTime=1; sound.volume=0.67; sound.playbackRate=3; break;
+          case "butWhenI": sound=sliceSound2; sound.currentTime=0; sound.volume=0.99; sound.playbackRate=3; break;
+          case "lowTaper": sound=sliceSound3; sound.currentTime=0; sound.volume=0.9; sound.playbackRate=2.3; break;
+          case "gloving": sound=sliceSound4; sound.currentTime=0; sound.volume=0.99; sound.playbackRate=1.5; break;
+          case "groupLeader": sound=sliceSound5; sound.currentTime=0; sound.volume=0.5; sound.playbackRate=3; break;
+        }
+        if(sound) sound.play();
+        items.splice(i,1);
+      }
     }
   }
 
-  // Check end conditions
-  if(lives <= 0) endGame("Game Over!");
-  if(score >= 25) endGame("You Win!");
+  if(score>=20 && !gameOver) endGame("You Win!");
 }
 
 // -------------------- End / Reset --------------------
 let finishScreen;
-function endGame(text = "Game Finished!") {
-  gameOver = true;
-  isSlicing = false;  // prevent accidental slicing after restart
+function endGame(text){
+  gameOver=true; isSlicing=false;
+  if(finishScreen) finishScreen.remove();
 
-  if(finishScreen) document.body.removeChild(finishScreen);
-  finishScreen = document.createElement("div");
-  finishScreen.style.cssText = `
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
+  finishScreen=document.createElement("div");
+  finishScreen.style.cssText=`
+    position: fixed; inset:0;
     background: rgba(0,0,0,0.95);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 9999; color: white; text-align: center; font-family: 'DotGothic16', sans-serif;
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    color:white; z-index:9999; text-align:center;
+    font-family: 'DotGothic16', sans-serif;
   `;
 
-  const mostSliced = Object.entries(sliceCount).sort((a,b)=>b[1]-a[1])[0][0];
+  const mostSliced = Object.entries(sliceCount).sort((a,b)=>b[1]-a[1])[0]?.[0];
+  const imgSrc = fruits.find(f=>f.name===mostSliced)?.src || "";
 
-  finishScreen.innerHTML = `
-    <h1 style="margin-bottom:20px;">${text}</h1>
-    <img src="${fruits.find(f=>f.name===mostSliced)?.src || ''}" 
-         style="max-width:200px; margin-bottom:30px; border-radius:15px; box-shadow:0 0 20px white;">
-  `;
+  const title = document.createElement("h1");
+  title.textContent=text;
+  title.style.marginBottom="20px";
+  finishScreen.appendChild(title);
 
-  const btn = document.createElement("button");
-  btn.innerText = "Restart";
-  btn.style.cssText = `
-    font-size: 1.2rem;
-    padding: 10px 40px;
-    cursor: pointer; border: none; border-radius: 25px;
-    background: linear-gradient(90deg, #ff4b2b, #ff416c);
-    color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(255,75,43,0.4);
+  if(imgSrc){
+    const img=document.createElement("img");
+    img.src=imgSrc;
+    img.style.cssText="max-width:200px;margin-bottom:30px;border-radius:15px;box-shadow:0 0 20px white;";
+    finishScreen.appendChild(img);
+  }
+
+  const btn=document.createElement("button");
+  btn.innerText="Restart";
+  btn.style.cssText=`
+    font-size:1.2rem; padding:10px 40px; cursor:pointer; border:none; border-radius:25px;
+    background: linear-gradient(90deg,#ff4b2b,#ff416c);
+    color:white; font-weight:bold; box-shadow:0 4px 12px rgba(255,75,43,0.4);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   `;
-  btn.onmouseenter = () => { btn.style.transform="scale(1.05)"; btn.style.boxShadow="0 6px 18px rgba(255,75,43,0.5)"; };
-  btn.onmouseleave = () => { btn.style.transform="scale(1)"; btn.style.boxShadow="0 4px 12px rgba(255,75,43,0.4)"; };
-  btn.onclick = () => { document.body.removeChild(finishScreen); resetGame(); };
-
+  btn.onmouseenter=()=>{btn.style.transform="scale(1.05)"; btn.style.boxShadow="0 6px 18px rgba(255,75,43,0.5)";}
+  btn.onmouseleave=()=>{btn.style.transform="scale(1)"; btn.style.boxShadow="0 4px 12px rgba(255,75,43,0.4)";}
+  btn.onclick=()=>{finishScreen.remove(); resetGame();}
   finishScreen.appendChild(btn);
+
   document.body.appendChild(finishScreen);
 }
 
-function resetGame() {
-  items.length = 0; particlesArray.length = 0; trail.length = 0;
-  score = 0; lives = 3; gameOver = false; initialItems = [];
-  isSlicing = false;
+function resetGame(){
+  items.length=0; particlesArray.length=0; trail.length=0;
+  score=0; lives=3; gameOver=false; isSlicing=false; initialItems=[];
+  bombsSpawned=0;
   for(let k in sliceCount) sliceCount[k]=0;
 }
 
 // -------------------- Game Loop --------------------
 function animate(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   for(let i=particlesArray.length-1;i>=0;i--){
     particlesArray[i].update();
     particlesArray[i].draw();
-    if(particlesArray[i].alpha<=0||particlesArray[i].size<=0.2) particlesArray.splice(i,1);
+    if(particlesArray[i].alpha<=0) particlesArray.splice(i,1);
   }
+
   drawTrail();
+
   for(let i=items.length-1;i>=0;i--){
     items[i].update();
     items[i].draw();
     if(items[i].dead) items.splice(i,1);
   }
+
   checkSlice();
-  ctx.fillStyle="white"; ctx.font="24px DotGothic16";
+
+  ctx.fillStyle="white";
+  ctx.font="24px DotGothic16";
   ctx.fillText(`Score: ${score}`,20,40);
   ctx.fillText(`Lives: ${lives}`,20,70);
+
   requestAnimationFrame(animate);
 }
+
 animate();
