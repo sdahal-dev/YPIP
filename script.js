@@ -41,11 +41,6 @@ const bomb = { name: "bomb", src: "Images/platoRepublic.jpg" };
 const sliceCount = {};
 fruits.forEach(f => (sliceCount[f.name] = 0));
 
-// Track first 10 items
-let initialItems = [];
-const INITIAL_POOL_SIZE = 10;
-let bombsSpawned = 0; 
-
 // -------------------- Mouse --------------------
 const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
 function updateMouse(e) {
@@ -169,29 +164,66 @@ class Item {
   }
 }
 
-// -------------------- Spawn --------------------
+// -------------------- TikTok-style Algorithm --------------------
+const TOTAL_INITIAL = 12;
+let initialPool = []; 
+
+// Create first 12 with at least one of each fruit
+function setupInitialPool() {
+  initialPool = [];
+  fruits.forEach(fruit => {
+    initialPool.push(fruit);
+    initialPool.push(fruit); // two copies of each for variability
+  });
+  // shuffle
+  for (let i = initialPool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [initialPool[i], initialPool[j]] = [initialPool[j], initialPool[i]];
+  }
+}
+setupInitialPool();
+
+// Track recent slices
+const recentSlices = [];
+const RECENT_LENGTH = 10;
+function updateRecent(fruitName) {
+  recentSlices.push(fruitName);
+  if (recentSlices.length > RECENT_LENGTH) recentSlices.shift();
+}
+
+// Pick fruit weighted by slices and recent activity
+function pickFruitWeighted() {
+  const totalSlices = Object.values(sliceCount).reduce((a, b) => a + b, 0) + fruits.length;
+  let rand = Math.random() * totalSlices;
+  let cumulative = 0;
+  for (let fruit of fruits) {
+    cumulative += (sliceCount[fruit.name] + 1);
+    if (recentSlices.includes(fruit.name)) cumulative += 1;
+    if (rand <= cumulative) return fruit;
+  }
+  return fruits[Math.floor(Math.random() * fruits.length)];
+}
+
+// -------------------- Spawn Item --------------------
 function spawnItem() {
   if (gameOver || items.length >= 8) return;
 
   let data;
-  const randomChance = Math.random();
-
-  // Dynamic bomb chance: start at 15%, increase if less than 2 bombs spawned
-  let bombChance = 0.15;
-  if (bombsSpawned < 2) {
-    bombChance = 0.25; // slightly higher chance to ensure at least 2 appear
-  }
-
-  if (randomChance < bombChance) {
-    data = bomb;
-    bombsSpawned++;
+  if (initialPool.length > 0) {
+    data = initialPool.shift();
+    if (Math.random() < 0.1) data = bomb;
   } else {
-    data = fruits[Math.floor(Math.random() * fruits.length)];
+    const CHANCE_RANDOM = 0.15;
+    if (Math.random() < CHANCE_RANDOM) {
+      const pool = [...fruits, bomb];
+      data = pool[Math.floor(Math.random() * pool.length)];
+    } else {
+      data = pickFruitWeighted();
+    }
   }
 
   items.push(new Item(data.name, data.src));
 }
-
 setInterval(spawnItem, 2000);
 
 // -------------------- Life Handling --------------------
@@ -230,9 +262,11 @@ function checkSlice() {
         const ended = loseLife();
         items.splice(i, 1);
         if (ended) { items.length = 0; trail.length = 0; return; }
-      } else { 
+      } else {
         score++;
         sliceCount[items[i].name]++;
+        updateRecent(items[i].name);
+
         let sound;
         switch(items[i].name){
           case "67": sound=sliceSound; sound.currentTime=1; sound.volume=0.67; sound.playbackRate=3; break;
@@ -247,7 +281,7 @@ function checkSlice() {
     }
   }
 
-  if(score>=20 && !gameOver) endGame("You Win!");
+  if(score>=18 && !gameOver) endGame("You Win!");
 }
 
 // -------------------- End / Reset --------------------
@@ -298,8 +332,10 @@ function endGame(text){
 
 function resetGame(){
   items.length=0; particlesArray.length=0; trail.length=0;
-  score=0; lives=3; gameOver=false; isSlicing=false; initialItems=[];
-  bombsSpawned=0;
+  score=0; lives=3; gameOver=false; isSlicing=false;
+  initialPool=[];
+  recentSlices.length = 0;
+  setupInitialPool();
   for(let k in sliceCount) sliceCount[k]=0;
 }
 
