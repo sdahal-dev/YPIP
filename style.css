@@ -2,16 +2,73 @@
 
 body {
   font-family: 'DotGothic16', sans-serif;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    overflow: hidden;
-    height: 100%
-}
-
-body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   background-color: black;
+}
+
+#main-canvas {
+  cursor: none;
+  display: block;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+  touch-action: none;
+}
+
+/* Finish screen overlay */
+.finish-screen {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: white;
+  text-align: center;
+  font-family: 'DotGothic16', sans-serif;
+}
+
+/* Most sliced fruit image */
+.most-sliced-img {
+  max-width: 200px;
+  margin: 20px 0;
+  border-radius: 15px;
+  box-shadow: 0 0 20px white;
+}
+
+/* Restart button */
+.restart-btn {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+
+  padding: 10px 30px;        
+  border-radius: 12px;        
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+
+  background: linear-gradient(90deg, #ff4b2b, #ff416c);
+  box-shadow: 0 3px 8px rgba(255,75,43,0.4);
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.restart-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(255,75,43,0.5);
+}
+
+body, html {
+    overflow: hidden;
+    touch-action: none;
 }
